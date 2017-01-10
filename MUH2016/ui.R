@@ -9,6 +9,7 @@
 
 library(shiny)
 library(plotly)
+library(leaflet)
 
 shinyUI(navbarPage(theme = "cerulean", "MTB UH 2016",
     tabPanel("Ride Count",
