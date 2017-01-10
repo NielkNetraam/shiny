@@ -7,14 +7,15 @@
 #    http://shiny.rstudio.com/
 #
 
-library(shiny)
-library(plotly)
-library(plyr)
-library(dplyr)
-library(lubridate)
-library(leaflet)
-library(rjson)
-library(googleway)
+library("shiny")
+library("plotly")
+library("plyr")
+library("dplyr")
+library("lubridate")
+library("leaflet")
+library("rjson")
+library("googleway")
+library("rpart")
 
 #load tracks
 json_file <- "data/track.json"
