@@ -16,20 +16,20 @@ library(leaflet)
 library(rjson)
 library(googleway)
 
+#load tracks
+json_file <- "data/track.json"
+tracks <- fromJSON(file=json_file)
+tracksdf <- do.call("rbind.fill", lapply(tracks$data, as.data.frame))
+tracksdf <- tracksdf %>% mutate(name = as.character(name), color = as.character(color), polyline = as.character(polyline)) %>% filter(id != 8, type == "permanent") 
+
 #load track data
 names <-c("Rhenen", "2", "3", "4", "5", "6" ,"Kwintelooijen", "8", "9", "10", "11", "Amerongen", "13","14","15","Hoge Ginkel","17","18","19","20","21","22","Leersum","Zeist","25","26", "27","28","29","Austerlitz")
-sectorDaily <- read.csv("./Data/sectorAggregate.csv", sep=";")
+sectorDaily <- read.csv("data/SectorAggregate.csv", sep=";")
 sectorDaily <- sectorDaily %>% 
     filter(dmy(date) <= ymd("2016-12-31")) %>%
     mutate(date=dmy(date),
            time=ymd_h(paste(date,hour)),
            name = names[id])
-
-#load tracks
-json_file <- "./Data/track.json"
-tracks <- fromJSON(file=json_file)
-tracksdf <- do.call("rbind.fill", lapply(tracks$data, as.data.frame))
-tracksdf <- tracksdf %>% mutate(name = as.character(name), color = as.character(color), polyline = as.character(polyline)) %>% filter(id != 8, type == "permanent") 
 
 #shiny server
 shinyServer(function(input, output) {
