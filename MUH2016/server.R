@@ -18,7 +18,7 @@ library(googleway)
 
 #load track data
 names <-c("Rhenen", "2", "3", "4", "5", "6" ,"Kwintelooijen", "8", "9", "10", "11", "Amerongen", "13","14","15","Hoge Ginkel","17","18","19","20","21","22","Leersum","Zeist","25","26", "27","28","29","Austerlitz")
-sectorDaily <- read.csv("sectorAggregate.csv", sep=";")
+sectorDaily <- read.csv("./sectorAggregate.csv", sep=";")
 sectorDaily <- sectorDaily %>% 
     filter(dmy(date) <= ymd("2016-12-31")) %>%
     mutate(date=dmy(date),
