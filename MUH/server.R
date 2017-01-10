@@ -1,0 +1,70 @@
+#
+# This is the server logic of a Shiny web application. You can run the 
+# application by clicking 'Run App' above.
+#
+# Find out more about building applications with Shiny here:
+# 
+#    http://shiny.rstudio.com/
+#
+
+library(shiny)
+library(plotly)
+library(plyr)
+library(dplyr)
+library(lubridate)
+library(leaflet)
+library(rjson)
+library(googleway)
+
+#load track data
+names <-c("Rhenen", "2", "3", "4", "5", "6" ,"Kwintelooijen", "8", "9", "10", "11", "Amerongen", "13","14","15","Hoge Ginkel","17","18","19","20","21","22","Leersum","Zeist","25","26", "27","28","29","Austerlitz")
+sectorDaily <- read.csv("sectorAggregate.csv", sep=";")
+sectorDaily <- sectorDaily %>% 
+    filter(dmy(date) <= ymd("2016-12-31")) %>%
+    mutate(date=dmy(date),
+           time=ymd_h(paste(date,hour)),
+           name = names[id])
+
+#load tracks
+json_file <- "./track.json"
+tracks <- fromJSON(file=json_file)
+tracksdf <- do.call("rbind.fill", lapply(tracks$data, as.data.frame))
+tracksdf <- tracksdf %>% mutate(name = as.character(name), color = as.character(color), polyline = as.character(polyline)) %>% filter(id != 8, type == "permanent") 
+
+#shiny server
+shinyServer(function(input, output) {
+    options(warn = -1) 
+    
+    sectorFilter <- reactive({
+        if ("0" %in% input$selection)
+            sectorDaily
+        else
+            sectorDaily %>% filter(id %in% input$selection)
+    })
+    
+    output$plotMonth <- renderPlotly({
+        sectorMonth <- sectorFilter() %>% group_by(name, month) %>% summarise(total = sum(count)) 
+        plot_ly(data=sectorMonth,  x = ~month, y=~total, type="scatter", mode="lines", color=~name)
+    })
+    
+    output$plotDay <- renderPlotly({
+        sectorDay <- sectorFilter() %>% filter(month >= input$months[1], month <= input$months[2]) %>% group_by(name, date) %>% summarise(total = sum(count)) 
+        plot_ly(data=sectorDay,  x = ~date, y=~total, type="scatter", mode="lines", color=~name)
+    })
+    
+    output$plotHour <- renderPlotly({
+        sectorHour <- sectorFilter() %>% arrange(time, time) %>% filter(month==input$month) 
+        plot_ly(data=sectorHour,  x = ~time, y=~count, type="scatter", mode="lines", color=~name)
+    })
+    
+    output$plotTrack <- renderLeaflet({
+        muh <- leaflet() %>% setView(lng = 5.40759, lat = 52.01522, zoom = 11) %>% addTiles()
+        for (i in 1:nrow(tracksdf)) {
+            decode_track <- decode_pl(tracksdf[i,]$polyline)
+            muh <- muh %>% addPolylines(lng=decode_track$lon, lat=decode_track$lat, color = tracksdf[i,]$color, popup = tracksdf[i,]$name)
+        }
+        muh <- muh %>% addLegend(position = "bottomleft", labels=tracksdf$name, colors=tracksdf$color)
+        muh
+    })
+    
+})
