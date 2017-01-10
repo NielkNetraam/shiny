@@ -29,7 +29,11 @@ sectorDaily <- sectorDaily %>%
     filter(dmy(date) <= ymd("2016-12-31")) %>%
     mutate(date=dmy(date),
            time=ymd_h(paste(date,hour)),
-           name = names[id])
+           name = names[id],
+           weekday = weekdays(date))
+
+#simple regression tree model to predict the number of ride on track.
+fit <- rpart(count ~ id+weekday+hour, method="anova", data=sectorDaily)
 
 #shiny server
 shinyServer(function(input, output) {
@@ -65,6 +69,14 @@ shinyServer(function(input, output) {
         }
         muh <- muh %>% addLegend(position = "bottomleft", labels=tracksdf$name, colors=tracksdf$color)
         muh
+    })
+
+    output$plotForecast <- renderPlotly({
+        forecastData <- data.frame(date=rep(seq(as.Date(now()), by=1, length.out = input$days),1,each=24), id = as.numeric(input$track), hour = rep(0:23,input$days))
+        forecastData <- forecastData %>% mutate(weekday = weekdays(date), month=month(date) ,time=ymd_h(paste(date,hour)))
+        forecastData$count <- predict(fit, newdata = forecastData)
+        plot_ly(data=forecastData,  x = ~time, y=~count, type="scatter", mode="lines") %>%
+            layout(                yaxis = list(rangemode = "tozero"))
     })
     
 })
