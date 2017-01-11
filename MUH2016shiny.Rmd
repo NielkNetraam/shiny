@@ -1,0 +1,71 @@
+---
+title: "MTB Utrechtse Heuvelrug 2016"
+author: "M. Klein"
+date: "10-1-2017"
+output: ioslides_presentation
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library("leaflet")
+library("rjson")
+library("plyr")
+library("dplyr")
+library("googleway")
+library("lubridate")
+```
+
+## MTB Tracks Utrechtse Heuvelrug 2016
+### The MTB app shows the capability of:
+- shiny
+- plotly
+- leaflet
+
+## The data and functionality
+- data on the rides is extracted from Strava
+- leaflet with 7 MTB tracks on the Utrechtse Heuvelrug, The Netherlands
+- interactive plotly's of rides per month, day and hour
+- prediction of number of rides in the coming days
+
+##Location
+The application is published on shinyapps.io
+
+URL: https://nielknetraam.shinyapps.io/MUH2016/
+```{r, echo = FALSE}
+json_file <- "MUH2016/data/track.json"
+tracks <- fromJSON(file=json_file)
+tracksdf <- do.call("rbind.fill", lapply(tracks$data, as.data.frame))
+tracksdf <- tracksdf %>% mutate(name = as.character(name), color = as.character(color), polyline = as.character(polyline)) %>% filter(id != 8, type == "permanent")
+
+renderLeaflet({
+    muh <- leaflet() %>% setView(lng = 5.40759, lat = 52.01522, zoom = 11) %>% addTiles()
+    for (i in 1:nrow(tracksdf)) {
+        decode_track <- decode_pl(tracksdf[i,]$polyline)
+        muh <- muh %>% addPolylines(lng=decode_track$lon, lat=decode_track$lat, color = tracksdf[i,]$color, popup = tracksdf[i,]$name)
+    }
+    muh <- muh %>% addLegend(position = "bottomleft", labels=tracksdf$name, colors=tracksdf$color)
+    muh
+})
+```
+
+##Totals
+The table contains the total number of rides in 2016 per track
+
+```{r, echo=FALSE}
+names <-c("Rhenen","","","","","","Kwintelooijen","","", "", "","Amerongen","","","","Hoge Ginkel","","","","","","","Leersum","Zeist","","","","","","Austerlitz")
+sectorDaily <- read.csv("MUH2016/data/SectorAggregate.csv", sep=";")
+sectorDaily <- sectorDaily %>% 
+    filter(dmy(date) <= ymd("2016-12-31")) %>%
+    mutate(date=dmy(date),
+           time=ymd_h(paste(date,hour)),
+           name = names[id],
+           weekday = weekdays(date))
+sectorDaily %>% group_by(name) %>% summarise(count=sum(count))
+
+```
+
+
+
+
+

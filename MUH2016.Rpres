@@ -1,0 +1,54 @@
+MTB Utrechtse Heuvelrug 2016
+========================================================
+author: Maarten Klein
+date: 10-01-2017
+autosize: true
+
+MTB Tracks Utrechtse Heuvelrug 2016
+========================================================
+## The MTB app shows the capability of:
+- shiny
+- plotly
+- leaflet
+
+
+The data and functionality
+========================================================
+
+- data on the rides is extracted from Strava
+- leaflet with 7 MTB tracks on the Utrechtse Heuvelrug, The Netherlands
+- interactive plotly's of rides per month, day and hour
+- prediction of number of rides in the coming days
+
+Location
+========================================================
+The application is published on shinyapps.io
+
+URL: **https://nielknetraam.shinyapps.io/MUH2016/**
+
+![alt text](leaflet.png)
+
+*shiny presentation: https://nielknetraam.shinyapps.io/muh2016_presentation/*
+
+Totals
+========================================================
+The table contains the total number of rides in 2016 per track
+
+```{r, echo=FALSE}
+library("plyr")
+library("dplyr")
+library("lubridate")
+names <-c("Rhenen","","","","","","Kwintelooijen","","", "", "","Amerongen","","","","Hoge Ginkel","","","","","","","Leersum","Zeist","","","","","","Austerlitz")
+sectorDaily <- read.csv("MUH2016/data/SectorAggregate.csv", sep=";")
+sectorDaily <- sectorDaily %>% 
+    filter(dmy(date) <= ymd("2016-12-31")) %>%
+    mutate(date=dmy(date),
+           time=ymd_h(paste(date,hour)),
+           name = names[id],
+           weekday = weekdays(date))
+sectorDaily %>% group_by(name) %>% summarise(count=sum(count))
+
+```
+
+
+
